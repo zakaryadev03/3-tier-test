@@ -58,5 +58,43 @@ pipeline {
                 sh 'trivy fs --format table -o fs-report.html .'
             }
         }
+        
+        stage('Build Docker Backend Image') {
+            steps {
+                script{
+                    withDockerRegistry(credentialsId: 'docker-cred') {
+                        dir('api'){
+                            sh 'docker build -t zakaryab2003/backend-devsecops:latest .'
+                            sh 'trivy image --format table -o Backend-image-report.html zakaryab2003/backend-devsecops:latest'
+                            sh 'docker push zakaryab2003/backend-devsecops:latest'
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Build Docker Frontend Image') {
+            steps {
+                script{
+                    withDockerRegistry(credentialsId: 'docker-cred') {
+                        dir('client'){
+                            sh 'docker build -t zakaryab2003/frontend-devsecops:latest .'
+                            sh 'trivy image --format table -o Frontend-image-report.html zakaryab2003/frontend-devsecops:latest'
+                            sh 'docker push zakaryab2003/frontend-devsecops:latest'
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Docker deploy via compose') {
+            steps {
+                script {
+                    sh 'docker compose up -d'
+                }
+            }
+        }
+        
+        
     }
 }
