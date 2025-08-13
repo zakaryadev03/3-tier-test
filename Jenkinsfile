@@ -86,15 +86,31 @@ pipeline {
                 }
             }
         }
-        
-        stage('Docker deploy via compose') {
+
+        stage('K8-deploy') {
             steps {
                 script {
-                    sh 'docker compose up -d'
+                    withKubeConfig(caCertificate: '', clusterName: 'sudcloud-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://042CDFB283295491DDF7G7A422346F3B.gr7.us-east-1.eks.amazonaws.com') {
+                            sh 'kubectl apply -f k8s/sc.yaml -n dev'
+                            sh 'kubectl apply -f k8s/mysql.yaml -n dev'
+                            sh 'kubectl apply -f k8s/backend.yaml -n dev'
+                            sh 'kubectl apply -f k8s/frontend.yaml -n dev'
+                            sleep 30
+                    }
                 }
             }
         }
         
+        stage('verify-K8-deploy') {
+            steps {
+                script {
+                    withKubeConfig(caCertificate: '', clusterName: 'sudcloud-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://042CDFB283295491DDF7G7A422346F3B.gr7.us-east-1.eks.amazonaws.com') {
+                            sh 'kubectl get pods -n dev'
+                            sh 'kubectl get svc -n dev'    
+                    }
+                }
+            }
+        }
         
     }
 }
